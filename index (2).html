@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boss Fight Simulator</title>
+
+    <style>
+
+        /* 📘 BOOK BACKGROUND */
+        body {
+            font-family: sans-serif;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 0 10px;
+
+            background-image: url('https://i.imgur.com/0Z8Qv1b.jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+
+            color: black;
+        }
+
+        .game-container {
+            background-color: rgba(255,255,255,0.85);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        }
+
+        #output {
+            background-color: rgba(255,255,255,0.8);
+            padding: 15px;
+            min-height: 200px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+        }
+
+        .controls button {
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+        }
+
+        .stats {
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        #username-section input {
+            padding: 8px;
+        }
+
+        .admin-tag {
+            color: red;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        /* ⭐ GLOWING ADMIN BUTTON ⭐ */
+        #adminMoneyBtn {
+            background: linear-gradient(45deg, gold, orange);
+            color: black;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            animation: glow 1s infinite alternate;
+        }
+
+        @keyframes glow {
+            from { box-shadow: 0 0 5px gold; }
+            to { box-shadow: 0 0 20px yellow; }
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="game-container">
+    <h1>Boss Fight Simulator</h1>
+
+    <div id="username-section">
+        Enter Username: <input type="text" id="usernameInput" placeholder="Your Name">
+    </div>
+
+    <div class="stats">
+        Player: <span id="playerName">N/A</span><span id="adminTag"></span> | 
+        Health: <span id="health">100</span> | 
+        Money: $<span id="money">0</span> | 
+        Level: <span id="level">1</span> | 
+        Weapon: <span id="weapon">Pistol</span>
+    </div>
+
+    <div id="output">Please enter your username and click "Start Game".</div>
+
+    <div class="controls">
+
+        <button onclick="startGame()">Start Game</button>
+
+        <!-- ⭐ ADMIN BUTTON (glowing, next to start game) ⭐ -->
+        <button onclick="giveAdminMoney()" id="adminMoneyBtn" style="display:none;">
+            +100 Billion $
+        </button>
+
+        <button onclick="fightBoss()" id="fightBtn" style="display:none;">Fight Next Boss</button>
+        <button onclick="work()" id="workBtn" style="display:none;">Work for Money</button>
+        <button onclick="revive()" id="reviveBtn" style="display:none;">Revive ($10)</button>
+    </div>
+</div>
+
+
+<script>
+    let playerHealth = 100;
+    let playerMoney = 0;
+    let playerLevel = 1;
+    let playerName = "N/A";
+    let isAdmin = false;
+
+    const reviveCost = 10;
+    let bossesDefeated = 0;
+
+    const weapons = ["Pistol", "Shotgun", "Rifle", "Minigun"];
+
+    const usernameInputEl = document.getElementById('usernameInput');
+    const playerNameEl = document.getElementById('playerName');
+    const adminTagEl = document.getElementById('adminTag');
+    const healthEl = document.getElementById('health');
+    const moneyEl = document.getElementById('money');
+    const levelEl = document.getElementById('level');
+    const weaponEl = document.getElementById('weapon');
+    const outputEl = document.getElementById('output');
+
+    const fightBtn = document.getElementById('fightBtn');
+    const workBtn = document.getElementById('workBtn');
+    const reviveBtn = document.getElementById('reviveBtn');
+    const adminMoneyBtn = document.getElementById('adminMoneyBtn');
+
+    function updateStats() {
+        playerNameEl.textContent = playerName;
+        healthEl.textContent = playerHealth;
+        moneyEl.textContent = playerMoney;
+        levelEl.textContent = playerLevel;
+
+        weaponEl.textContent = weapons[Math.min(playerLevel - 1, weapons.length - 1)];
+
+        reviveBtn.style.display = (playerHealth <= 0 && playerMoney >= reviveCost) ? "inline-block" : "none";
+
+        fightBtn.disabled = playerHealth <= 0;
+        workBtn.disabled = playerHealth <= 0;
+    }
+
+    function log(msg) {
+        outputEl.textContent += "\n> " + msg;
+        outputEl.scrollTop = outputEl.scrollHeight;
+    }
+
+    function startGame() {
+        const name = usernameInputEl.value.trim();
+        if (!name) {
+            log("Please enter a valid username.");
+            return;
+        }
+
+        playerName = name;
+        playerNameEl.textContent = name;
+        usernameInputEl.disabled = true;
+
+        if (name.toLowerCase() === "wonzo") {
+            isAdmin = true;
+            adminTagEl.innerHTML = "<span class='admin-tag'>(ADMIN)</span>";
+            adminMoneyBtn.style.display = "inline-block"; 
+            log("ADMIN MODE ENABLED!");
+        }
+
+        fightBtn.style.display = "inline-block";
+        workBtn.style.display = "inline-block";
+
+        log(`Welcome, ${playerName}! Game started.`);
+        updateStats();
+    }
+
+    function fightBoss() {
+        if (playerHealth <= 0) {
+            log("You are defeated! Revive first.");
+            return;
+        }
+
+        const bossLevel = bossesDefeated + 1;
+
+        let damageDealt = Math.floor(Math.random() * 20) + 10 * playerLevel;
+        let damageTaken = Math.floor(Math.random() * 40) + 15 * bossLevel;
+        let moneyEarned = Math.floor(Math.random() * 10) + 5 * bossLevel;
+
+        if (isAdmin) {
+            damageDealt *= 2;
+            moneyEarned *= 2;
+            damageTaken = 0;
+        }
+
+        playerHealth -= damageTaken;
+        playerMoney += moneyEarned;
+
+        if (playerHealth > 0) {
+            bossesDefeated++;
+            playerLevel++;
+            log(`Boss ${bossLevel} defeated. Dealt ${damageDealt}, took ${damageTaken}, earned $${moneyEarned}.`);
+        } else {
+            playerHealth = 0;
+            log("GAME OVER.");
+        }
+
+        updateStats();
+    }
+
+    function work() {
+        if (playerHealth <= 0) {
+            log("Cannot work while dead.");
+            return;
+        }
+
+        let earnings = (Math.floor(Math.random() * 5 + 2) * playerLevel);
+
+        if (isAdmin) earnings *= 3;
+
+        playerMoney += earnings;
+
+        log(`Worked and earned $${earnings}.`);
+        updateStats();
+    }
+
+    function revive() {
+        if (isAdmin) {
+            playerHealth = 100;
+            log("ADMIN REVIVE!");
+            updateStats();
+            return;
+        }
+
+        if (playerMoney >= reviveCost && playerHealth <= 0) {
+            playerMoney -= reviveCost;
+            playerHealth = 50;
+            log("Revived with 50 HP.");
+        } else {
+            log("Cannot revive.");
+        }
+
+        updateStats();
+    }
+
+    // ⭐ ADMIN BUTTON ⭐
+    function giveAdminMoney() {
+        if (!isAdmin) return;
+
+        playerMoney += 100000000000;
+        log("ADMIN: Added $100,000,000,000!");
+        updateStats();
+    }
+
+</script>
+
+</body>
+</html>
